@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard kiểm kê</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-3">
+
+  <h4 class="mb-3 text-center">📊 TIẾN ĐỘ KIỂM KÊ THEO BỘ PHẬN</h4>
+
+  {% for _, row in stat.iterrows() %}
+  <div class="card shadow mb-3">
+    <div class="card-body">
+
+      <h5 class="card-title">{{ row.Bo_phan_KK }}</h5>
+
+      <p class="mb-1">👥 Tổng NV: <b>{{ row.Tong_NV }}</b></p>
+      <p class="mb-1 text-success">✅ Đã KK: {{ row.Da_KK }}</p>
+      <p class="mb-1 text-danger">❌ Chưa KK: {{ row.Chua_KK }}</p>
+
+      <div class="progress mt-2">
+        <div class="progress-bar
+          {% if row.Tien_do == 100 %}
+            bg-success
+          {% elif row.Tien_do >= 50 %}
+            bg-warning
+          {% else %}
+            bg-danger
+          {% endif %}"
+          style="width: {{ row.Tien_do }}%">
+          {{ row.Tien_do }}%
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="text-center mt-3">
+    <a href="/admin/home" class="btn btn-secondary w-100">← Quay lại Admin</a>
+  </div>
+
+</div>
+
+</body>
+</html>
+<a href="/admin/export/{{ row.Bo_phan_KK }}"
+   class="btn btn-success btn-sm">
+   Xuất Excel
+</a>
+
