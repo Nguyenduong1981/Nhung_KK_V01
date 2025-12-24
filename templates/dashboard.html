@@ -9,18 +9,47 @@
 <div class="container mt-3">
 
 {% if role=="user" %}
-<div class="card p-3">
-<h5>👤 {{ nv.Ho_ten }}</h5>
-<p>BP KK: {{ nv.Bo_phan_KK }}</p>
-<p>Trạng thái: <b>{{ trang_thai }}</b></p>
+<div class="card shadow-sm mb-3">
+  <div class="card-header bg-primary text-white text-center">
+    👤 THÔNG TIN NHÂN VIÊN
+  </div>
 
-<form method="post" action="/user/checkin">
-<select name="Trang_thai" class="form-select mb-2">
-<option>Đang KK</option>
-<option>Kết thúc KK</option>
-</select>
-<button class="btn btn-success w-100">Cập nhật</button>
-</form>
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item"><b>Mã NV:</b> {{ nv.Ma_NV }}</li>
+    <li class="list-group-item"><b>Họ tên:</b> {{ nv.Ho_ten }}</li>
+    <li class="list-group-item"><b>BP:</b> {{ nv.BP }}</li>
+    <li class="list-group-item"><b>Bộ phận KK:</b> {{ nv.Bo_phan_KK }}</li>
+    <li class="list-group-item"><b>Loại hàng:</b> {{ nv.Loai_hang }}</li>
+    <li class="list-group-item"><b>Nhóm:</b> {{ nv.Nhom }}</li>
+    <li class="list-group-item"><b>Đội:</b> {{ nv.Doi }}</li>
+    <li class="list-group-item"><b>Vai trò:</b> {{ nv.Vai_tro }}</li>
+    <li class="list-group-item"><b>SĐT:</b> {{ nv.SDT }}</li>
+  </ul>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-success text-white text-center">
+    📋 TRẠNG THÁI KIỂM KÊ
+  </div>
+
+  <div class="card-body">
+    <p>
+      Trạng thái hiện tại:
+      <span class="badge bg-info">{{ trang_thai }}</span>
+    </p>
+
+    <form method="post" action="/user/checkin">
+      <label class="form-label">Cập nhật trạng thái</label>
+      <select name="Trang_thai" class="form-select mb-3">
+        <option value="Đang KK">Đang KK</option>
+        <option value="Kết thúc KK">Kết thúc KK</option>
+      </select>
+
+      <button class="btn btn-success w-100">
+        ✔ Cập nhật kiểm kê
+      </button>
+    </form>
+  </div>
 </div>
 {% endif %}
 
@@ -49,3 +78,4 @@
 </div>
 </body>
 </html>
+
