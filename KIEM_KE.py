@@ -173,26 +173,47 @@ def admin_dashboard():
 
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
-def export_by_bo_phan(bo_phan):
+def export_bo_phan(bo_phan):
     if "admin" not in session:
         return redirect("/admin")
 
     if not os.path.exists(CHECKIN_FILE):
         return "❌ Chưa có dữ liệu kiểm kê"
 
-    dfc = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+    # Đọc file checkin
+    df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
 
-    df_bp = dfc[dfc["Bo_phan_KK"]==bo_phan]
-    if df_bp.empty:
-        return "Không có dữ liệu"
+    # Lọc theo Bộ phận KK
+    df_export = df_export[df_export["Bo_phan_KK"] == bo_phan]
 
-    path = os.path.join(BASE_DIR, f"kiem_ke_{bo_phan}.xlsx")
-    df_bp.to_excel(path, index=False)
+    if df_export.empty:
+        return f"❌ Bộ phận {bo_phan} chưa có dữ liệu"
 
-    return send_file(path, as_attachment=True)
+    # Đảm bảo đủ cột + đúng thứ tự
+    df_export = df_export[[
+        "Ma_NV",
+        "Ho_ten",
+        "Bo_phan_KK",
+        "Thoi_gian",
+        "Tinh_trang"
+    ]]
+
+    # Tên file xuất
+    file_name = f"KQ_KIEM_KE_{bo_phan}.csv"
+    file_path = os.path.join(BASE_DIR, file_name)
+
+    # Xuất CSV không lỗi font
+    df_export.to_csv(
+        file_path,
+        index=False,
+        encoding="utf-8-sig"
+    )
+
+    return send_file(file_path, as_attachment=True)
 
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
