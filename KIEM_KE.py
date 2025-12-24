@@ -11,7 +11,7 @@ CHECKIN_FILE = os.path.join(BASE_DIR, "checkin.csv")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 QR_FILE = os.path.join(STATIC_DIR, "qr_kiem_ke.png")
 
-LINK = "https://kk-final-1.onrender.com"   # 🔴 đổi đúng link Render
+LINK = "https://kk-final-1.onrender.com"   # đổi đúng link Render
 
 # ================= QR =================
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -28,7 +28,7 @@ def load_data():
 
 df = load_data()
 
-# ================= USER LOGIN =================
+# ================= LOGIN =================
 @app.route("/", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -41,17 +41,29 @@ def login():
         ]
 
         if nv.empty:
-            return "❌ Sai mã NV hoặc mật khẩu"
+            return "❌ Sai tài khoản hoặc mật khẩu"
 
-        session["user"] = ma_nv
-        return redirect("/user")
+        nv = nv.iloc[0]
+        session["user"] = str(nv["Ma_NV"])
+        session["role"] = nv.get("Role","user")
+
+        return redirect("/dashboard")
 
     return render_template("login.html")
 
-# ================= USER HOME =================
-@app.route("/user")
-def user_home():
+# ================= DASHBOARD ROUTER =================
+@app.route("/dashboard")
+def dashboard():
     if "user" not in session:
+        return redirect("/")
+    if session["role"] == "admin":
+        return redirect("/dashboard/admin")
+    return redirect("/dashboard/user")
+
+# ================= USER DASHBOARD =================
+@app.route("/dashboard/user")
+def dashboard_user():
+    if "user" not in session or session["role"]!="user":
         return redirect("/")
 
     nv = df[df["Ma_NV"].astype(str)==session["user"]].iloc[0]
@@ -63,7 +75,12 @@ def user_home():
         if not rows.empty:
             trang_thai = rows.iloc[-1]["Trang_thai"]
 
-    return render_template("user_home.html", nv=nv, trang_thai=trang_thai)
+    return render_template(
+        "dashboard.html",
+        role="user",
+        nv=nv,
+        trang_thai=trang_thai
+    )
 
 # ================= USER CHECKIN =================
 @app.route("/user/checkin", methods=["POST"])
@@ -72,7 +89,7 @@ def user_checkin():
         return redirect("/")
 
     ma_nv = session["user"]
-    trang_thai = request.form.get("Trang_thai", "Đang KK")
+    trang_thai = request.form["Trang_thai"]
 
     nv = df[df["Ma_NV"].astype(str)==ma_nv].iloc[0]
 
@@ -86,50 +103,18 @@ def user_checkin():
 
     if os.path.exists(CHECKIN_FILE):
         checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
-
-        done = checked[
-            (checked["Ma_NV"].astype(str)==ma_nv) &
-            (checked["Trang_thai"]=="Kết thúc KK")
-        ]
-        if not done.empty:
-            return "⚠️ Đã kết thúc kiểm kê"
-
         checked = pd.concat([checked, pd.DataFrame([row])])
     else:
         checked = pd.DataFrame([row])
 
     checked.to_csv(CHECKIN_FILE, index=False, encoding="utf-8-sig")
-    return redirect("/user")
-
-# ================= ADMIN LOGIN =================
-@app.route("/admin", methods=["GET","POST"])
-def admin_login():
-    if request.method == "POST":
-        if request.form["user"]=="admin" and request.form["pass"]=="admin123":
-            session["admin"] = True
-            return redirect("/admin/home")
-        return "❌ Sai tài khoản admin"
-    return render_template("admin_login.html")
-
-# ================= ADMIN HOME =================
-@app.route("/admin/home", methods=["GET","POST"])
-def admin_home():
-    if "admin" not in session:
-        return redirect("/admin")
-
-    global df
-    if request.method == "POST":
-        file = request.files["file"]
-        file.save(DATA_FILE)
-        df = load_data()
-
-    return render_template("admin_home.html")
+    return redirect("/dashboard/user")
 
 # ================= ADMIN DASHBOARD =================
-@app.route("/admin/dashboard")
-def admin_dashboard():
-    if "admin" not in session:
-        return redirect("/admin")
+@app.route("/dashboard/admin")
+def dashboard_admin():
+    if "user" not in session or session["role"]!="admin":
+        return redirect("/")
 
     total = df.groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Tong")
 
@@ -148,36 +133,34 @@ def admin_dashboard():
                 .merge(ket, on="Bo_phan_KK", how="left") \
                 .fillna(0)
 
-    stat["Tien_do"] = (stat["Ket_thuc"] / stat["Tong"] * 100).round(1)
+    stat["Tien_do"] = (stat["Ket_thuc"]/stat["Tong"]*100).round(1)
 
     return render_template(
-        "admin_dashboard.html",
+        "dashboard.html",
+        role="admin",
         stat=stat.to_dict(orient="records")
     )
 
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
 def export_bo_phan(bo_phan):
-    if "admin" not in session:
-        return redirect("/admin")
+    if session.get("role")!="admin":
+        return redirect("/")
 
     df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
     df_export = df_export[df_export["Bo_phan_KK"]==bo_phan]
 
-    file = f"KQ_KIEM_KE_{bo_phan}.csv"
-    df_export.to_csv(file, index=False, encoding="utf-8-sig")
-    return send_file(file, as_attachment=True)
+    file_path = f"KQ_{bo_phan}.csv"
+    df_export.to_csv(file_path, index=False, encoding="utf-8-sig")
+    return send_file(file_path, as_attachment=True)
 
 # ================= EXPORT ALL =================
 @app.route("/admin/export_all")
 def export_all():
-    if "admin" not in session:
-        return redirect("/admin")
+    if session.get("role")!="admin":
+        return redirect("/")
 
-    file = "KQ_KIEM_KE_TAT_CA.csv"
-    df_all = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
-    df_all.to_csv(file, index=False, encoding="utf-8-sig")
-    return send_file(file, as_attachment=True)
+    return send_file(CHECKIN_FILE, as_attachment=True)
 
 # ================= RUN =================
 if __name__ == "__main__":
