@@ -161,7 +161,13 @@ def export_all():
         return redirect("/")
 
     return send_file(CHECKIN_FILE, as_attachment=True)
+# ================= LOGOUT =================
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
 
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
