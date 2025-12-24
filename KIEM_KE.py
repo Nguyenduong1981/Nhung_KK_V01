@@ -9,26 +9,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "data.xlsx")
 CHECKIN_FILE = os.path.join(BASE_DIR, "checkin.csv")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-QR_FILE = os.path.join(STATIC_DIR, "qr_kiem_ke.png")
-
-LINK = "https://kk-final-1.onrender.com"
-
-# ================= QR =================
-os.makedirs(STATIC_DIR, exist_ok=True)
-if not os.path.exists(QR_FILE):
-    qrcode.make(LINK).save(QR_FILE)
 
 # ================= LOAD DATA =================
 def load_data():
-    try:
-        if os.path.exists(DATA_FILE):
-            df = pd.read_excel(DATA_FILE)
-            df.columns = df.columns.str.strip()
-            return df
-        return pd.DataFrame()
-    except Exception as e:
-        print("LỖI LOAD EXCEL:", e)
-        return pd.DataFrame()
+    if os.path.exists(DATA_FILE):
+        df = pd.read_excel(DATA_FILE)
+        df.columns = df.columns.str.strip()
+        return df
+    return pd.DataFrame()
 
 df = load_data()
 
@@ -76,7 +64,7 @@ def user_checkin():
         return redirect("/")
 
     ma_nv = session["user"]
-    trang_thai = request.form.get("trang_thai", "Đang KK")
+    trang_thai = request.form.get("trang_thai")
 
     nv = df[df["Ma_NV"].astype(str)==ma_nv].iloc[0]
 
@@ -91,12 +79,12 @@ def user_checkin():
     if os.path.exists(CHECKIN_FILE):
         checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
 
-        done = checked[
+        # Không cho ghi thêm nếu đã kết thúc
+        if not checked[
             (checked["Ma_NV"].astype(str)==ma_nv) &
             (checked["Trang_thai"]=="Kết thúc KK")
-        ]
-        if not done.empty:
-            return "⚠️ Nhân viên đã kết thúc kiểm kê"
+        ].empty:
+            return "⚠️ Đã kết thúc kiểm kê"
 
         checked = pd.concat([checked, pd.DataFrame([row])])
     else:
@@ -111,29 +99,19 @@ def admin_login():
     if request.method == "POST":
         if request.form["user"]=="admin" and request.form["pass"]=="admin123":
             session["admin"] = True
-            return redirect("/admin/home")
+            return redirect("/admin/dashboard")
         return "❌ Sai tài khoản admin"
+
     return render_template("admin_login.html")
-
-# ================= ADMIN HOME =================
-@app.route("/admin/home", methods=["GET","POST"])
-def admin_home():
-    if "admin" not in session:
-        return redirect("/admin")
-
-    global df
-    if request.method == "POST":
-        file = request.files["file"]
-        file.save(DATA_FILE)
-        df = load_data()
-
-    return render_template("admin_home.html")
 
 # ================= ADMIN DASHBOARD =================
 @app.route("/admin/dashboard")
 def admin_dashboard():
     if "admin" not in session:
         return redirect("/admin")
+
+    if df.empty:
+        return "❌ Chưa có dữ liệu"
 
     total = df.groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Tong")
 
@@ -143,35 +121,25 @@ def admin_dashboard():
         checked = pd.DataFrame(columns=["Bo_phan_KK","Trang_thai","Ma_NV"])
 
     dang = checked[checked["Trang_thai"]=="Đang KK"] \
-        .groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Dang_KK")
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Dang_KK")
 
     ket = checked[checked["Trang_thai"]=="Kết thúc KK"] \
-        .groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Ket_thuc")
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Ket_thuc")
 
     stat = total.merge(dang, on="Bo_phan_KK", how="left") \
                 .merge(ket, on="Bo_phan_KK", how="left") \
                 .fillna(0)
 
-    stat["Tien_do"] = (stat["Ket_thuc"]/stat["Tong"]*100).round(1)
+    stat["Dang_KK"] = stat["Dang_KK"].astype(int)
+    stat["Ket_thuc"] = stat["Ket_thuc"].astype(int)
+    stat["Tien_do"] = (stat["Ket_thuc"] / stat["Tong"] * 100).round(1)
 
-    return render_template("admin_dashboard.html", stat=stat.to_dict("records"))
-
-# ================= EXPORT THEO BỘ PHẬN =================
-@app.route("/admin/export/<bo_phan>")
-def export_bo_phan(bo_phan):
-    if "admin" not in session:
-        return redirect("/admin")
-
-    df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
-    df_export = df_export[df_export["Bo_phan_KK"]==bo_phan]
-
-    df_export = df_export[[
-        "Ma_NV","Ho_ten","Bo_phan_KK","Thoi_gian","Trang_thai"
-    ]]
-
-    path = os.path.join(BASE_DIR, f"KQ_KIEM_KE_{bo_phan}.csv")
-    df_export.to_csv(path, index=False, encoding="utf-8-sig")
-    return send_file(path, as_attachment=True)
+    return render_template(
+        "admin_dashboard.html",
+        stat=stat.to_dict(orient="records")
+    )
 
 # ================= EXPORT ALL =================
 @app.route("/admin/export_all")
@@ -179,18 +147,26 @@ def export_all():
     if "admin" not in session:
         return redirect("/admin")
 
+    if not os.path.exists(CHECKIN_FILE):
+        return "❌ Chưa có dữ liệu kiểm kê"
+
     df_all = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
 
-    cols = ["Ma_NV","Ho_ten","Bo_phan_KK","Thoi_gian","Trang_thai"]
-    for c in cols:
-        if c not in df_all.columns:
-            df_all[c] = ""
+    if df_all.empty:
+        return "❌ File kiểm kê trống"
 
-    df_all = df_all[cols]
+    df_all = df_all[[
+        "Ma_NV",
+        "Ho_ten",
+        "Bo_phan_KK",
+        "Thoi_gian",
+        "Trang_thai"
+    ]]
 
-    path = os.path.join(BASE_DIR, "KQ_KIEM_KE_TAT_CA_BO_PHAN.csv")
-    df_all.to_csv(path, index=False, encoding="utf-8-sig")
-    return send_file(path, as_attachment=True)
+    file_path = os.path.join(BASE_DIR, "KQ_KIEM_KE_TAT_CA.csv")
+    df_all.to_csv(file_path, index=False, encoding="utf-8-sig")
+
+    return send_file(file_path, as_attachment=True)
 
 # ================= RUN =================
 if __name__ == "__main__":
