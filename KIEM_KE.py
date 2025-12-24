@@ -135,22 +135,27 @@ def dashboard_admin():
 
     checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
 
-    # Tránh lỗi file cũ
+    # Nếu file cũ thiếu cột
     if "Trang_thai" not in checked.columns:
         checked["Trang_thai"] = "Kết thúc KK"
-
-    # ===== THỐNG KÊ =====
-    dang = checked[checked["Trang_thai"]=="Đang KK"] \
+    
+    # 🔥 LẤY TRẠNG THÁI CUỐI CÙNG CỦA MỖI NV
+    checked_latest = checked.sort_values("Thoi_gian") \
+                             .drop_duplicates("Ma_NV", keep="last")
+    
+    # ===== THỐNG KÊ THEO TRẠNG THÁI =====
+    dang = checked_latest[checked_latest["Trang_thai"]=="Đang KK"] \
         .groupby("Bo_phan_KK")["Ma_NV"] \
         .count().reset_index(name="Dang_KK")
-
-    cheo = checked[checked["Trang_thai"]=="Đang check chéo"] \
+    
+    cheo = checked_latest[checked_latest["Trang_thai"]=="Đang check chéo"] \
         .groupby("Bo_phan_KK")["Ma_NV"] \
         .count().reset_index(name="Dang_cheo")
-
-    ket = checked[checked["Trang_thai"]=="Kết thúc KK"] \
+    
+    ket = checked_latest[checked_latest["Trang_thai"]=="Kết thúc KK"] \
         .groupby("Bo_phan_KK")["Ma_NV"] \
         .count().reset_index(name="Ket_thuc")
+
 
     # Gộp
     stat = total \
@@ -158,18 +163,14 @@ def dashboard_admin():
         .merge(cheo, on="Bo_phan_KK", how="left") \
         .merge(ket, on="Bo_phan_KK", how="left") \
         .fillna(0)
-
+    
     stat["Dang_KK"] = stat["Dang_KK"].astype(int)
     stat["Dang_cheo"] = stat["Dang_cheo"].astype(int)
     stat["Ket_thuc"] = stat["Ket_thuc"].astype(int)
-
+    
+    # ✅ TIẾN ĐỘ CHUẨN
     stat["Tien_do"] = (stat["Ket_thuc"] / stat["Tong"] * 100).round(1)
 
-    return render_template(
-        "dashboard.html",
-        role="admin",
-        stat=stat.to_dict(orient="records")
-    )
 
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
@@ -200,6 +201,7 @@ def logout():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
 
