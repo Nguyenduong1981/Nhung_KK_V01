@@ -1,19 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>Đăng nhập kiểm kê</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 380px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+.logo {
+    font-size: 48px;
+}
+</style>
 </head>
-<body class="bg-light">
-<div class="container mt-5">
-<div class="card p-4 shadow">
-<h4 class="text-center">🔐 Đăng nhập kiểm kê</h4>
-<form method="post">
-<input class="form-control mb-2" name="ma_nv" placeholder="Mã nhân viên">
-<input type="password" class="form-control mb-3" name="mat_khau" placeholder="Mật khẩu">
-<button class="btn btn-primary w-100">Đăng nhập</button>
-</form>
+
+<body>
+
+<div class="card login-card p-4">
+    <div class="text-center mb-4">
+        <div class="logo">📋</div>
+        <h4 class="fw-bold mt-2">HỆ THỐNG KIỂM KÊ</h4>
+        <small class="text-muted">Đăng nhập User / Admin</small>
+    </div>
+
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Mã nhân viên</label>
+            <input type="text" name="ma_nv" class="form-control form-control-lg" 
+                   placeholder="Nhập mã NV / admin" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Mật khẩu</label>
+            <input type="password" name="mat_khau" class="form-control form-control-lg" 
+                   placeholder="••••••••" required>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100 mt-2">
+            🔐 Đăng nhập
+        </button>
+    </form>
+
+    <hr>
+
+    <div class="text-center text-muted small">
+        © 2025 – Hệ thống kiểm kê nội bộ
+    </div>
 </div>
-</div>
+
 </body>
 </html>
