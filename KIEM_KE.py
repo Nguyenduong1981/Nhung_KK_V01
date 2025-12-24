@@ -11,7 +11,7 @@ CHECKIN_FILE = os.path.join(BASE_DIR, "checkin.csv")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 QR_FILE = os.path.join(STATIC_DIR, "qr_kiem_ke.png")
 
-LINK = "https://kk-final-1.onrender.com"   # đổi đúng link Render
+LINK = "https://nhung-kk-v01.onrender.com/"   # đổi đúng link Render
 
 # ================= QR =================
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -170,4 +170,5 @@ def logout():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
