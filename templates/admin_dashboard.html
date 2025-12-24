@@ -1,127 +1,51 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Dashboard kiểm kê</title>
-<a href="/admin/export_all"
-   class="btn btn-success w-100 mb-3">
-  ⬇ Xuất TẤT CẢ kết quả kiểm kê
-</a>
-
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-
-<style>
-  body { background: #f5f6fa; }
-  .kk-card { border-radius: 16px; }
-  .progress { height: 10px; }
-  .badge { font-size: 0.8rem; }
-</style>
 </head>
+<body class="bg-light">
 
-<body>
+<div class="container mt-3">
 
-<div class="container py-3">
+{% if role=="user" %}
+<div class="card p-3">
+<h5>👤 {{ nv.Ho_ten }}</h5>
+<p>BP KK: {{ nv.Bo_phan_KK }}</p>
+<p>Trạng thái: <b>{{ trang_thai }}</b></p>
 
-  <!-- HEADER -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold">
-      <i class="bi bi-bar-chart-fill text-primary"></i>
-      Dashboard kiểm kê
-    </h5>
-    <a href="/admin/home" class="btn btn-sm btn-outline-secondary">
-      <i class="bi bi-arrow-left"></i>
-    </a>
-  </div>
+<form method="post" action="/user/checkin">
+<select name="Trang_thai" class="form-select mb-2">
+<option>Đang KK</option>
+<option>Kết thúc KK</option>
+</select>
+<button class="btn btn-success w-100">Cập nhật</button>
+</form>
+</div>
+{% endif %}
 
-  <!-- SUMMARY -->
-  {% set tong = stat | sum(attribute='Tong') %}
-  {% set ket = stat | sum(attribute='Ket_thuc') %}
-  {% set tien_do = (ket / tong * 100) | round(1) if tong > 0 else 0 %}
-
-  <div class="card kk-card shadow-sm mb-4">
-    <div class="card-body text-center">
-      <h6 class="text-muted">Tiến độ toàn hệ thống</h6>
-      <h3 class="fw-bold text-success">{{ tien_do }}%</h3>
-      <div class="progress mt-2">
-        <div class="progress-bar bg-success" style="width: {{ tien_do }}%"></div>
-      </div>
-      <small class="text-muted">{{ ket }} / {{ tong }} nhân viên hoàn thành</small>
-    </div>
-  </div>
-
-  <!-- DEPARTMENT CARDS -->
-  {% for row in stat %}
-  <div class="card kk-card shadow-sm mb-3">
-    <div class="card-body">
-
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="fw-bold mb-0">
-          <i class="bi bi-diagram-3-fill text-primary"></i>
-          {{ row.Bo_phan_KK }}
-        </h6>
-        <span class="badge bg-light text-dark">
-          {{ row.Ket_thuc }}/{{ row.Tong }}
-        </span>
-      </div>
-
-      <div class="progress mb-2">
-        <div class="progress-bar 
-          {% if row.Tien_do >= 100 %}bg-success
-          {% elif row.Tien_do >= 50 %}bg-warning
-          {% else %}bg-danger{% endif %}"
-          style="width: {{ row.Tien_do }}%">
-        </div>
-      </div>
-
-      <div class="row text-center small">
-        <div class="col">
-          <span class="badge bg-warning text-dark">
-            Đang KK: {{ row.Dang_KK }}
-          </span>
-        </div>
-        <div class="col">
-          <span class="badge bg-success">
-            Kết thúc: {{ row.Ket_thuc }}
-          </span>
-        </div>
-        <div class="col">
-          <span class="badge bg-secondary">
-            Chưa: {{ row.Tong - row.Dang_KK - row.Ket_thuc }}
-          </span>
-        </div>
-      </div>
-
-      <a href="/admin/export/{{ row.Bo_phan_KK }}"
-         class="btn btn-outline-primary btn-sm w-100 mt-3">
-        <i class="bi bi-download"></i>
-        Xuất kết quả bộ phận
-      </a>
-
-    </div>
-  </div>
-  {% endfor %}
+{% if role=="admin" %}
+<h4>📊 Dashboard kiểm kê</h4>
+<table class="table table-bordered bg-white">
+<tr>
+<th>Bộ phận</th><th>Tổng</th><th>Đang</th><th>Kết thúc</th><th>%</th><th></th>
+</tr>
+{% for r in stat %}
+<tr>
+<td>{{ r.Bo_phan_KK }}</td>
+<td>{{ r.Tong }}</td>
+<td>{{ r.Dang_KK }}</td>
+<td>{{ r.Ket_thuc }}</td>
+<td>{{ r.Tien_do }}%</td>
+<td>
+<a class="btn btn-sm btn-primary" href="/admin/export/{{ r.Bo_phan_KK }}">Xuất</a>
+</td>
+</tr>
+{% endfor %}
+</table>
+<a class="btn btn-danger w-100" href="/admin/export_all">Xuất toàn bộ</a>
+{% endif %}
 
 </div>
-
 </body>
 </html>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const data = {{ stat|tojson }};
-new Chart(document.getElementById('chart'), {
-  type: 'bar',
-  data: {
-    labels: data.map(x=>x.Bo_phan_KK),
-    datasets: [{
-      label: 'Tiến độ %',
-      data: data.map(x=>x.Tien_do),
-      backgroundColor: '#0d6efd'
-    }]
-  }
-});
-</script>
-
-
