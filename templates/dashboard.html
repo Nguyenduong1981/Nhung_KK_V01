@@ -1,177 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<title>Dashboard kiểm kê</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background-color: #f4f6f9;
+}
+.card {
+    border-radius: 14px;
+}
+</style>
 </head>
-<body class="bg-light">
 
-<div class="container mt-3">
+<body>
 
-{% if role=="user" %}
-<div class="card shadow-sm mb-3">
-  <div class="card-header bg-primary text-white text-center">
-    👤 THÔNG TIN NHÂN VIÊN
-  </div>
+<nav class="navbar navbar-dark bg-primary px-3">
+    <span class="navbar-brand fw-bold">📋 HỆ THỐNG KIỂM KÊ</span>
+    <a href="/logout" class="btn btn-light btn-sm">Logout</a>
+</nav>
 
-  <ul class="list-group list-group-flush">
-    <li class="list-group-item"><b>Mã NV:</b> {{ nv.Ma_NV }}</li>
-    <li class="list-group-item"><b>Họ tên:</b> {{ nv.Ho_ten }}</li>
-    <li class="list-group-item"><b>BP:</b> {{ nv.BP }}</li>
-    <li class="list-group-item"><b>Bộ phận KK:</b> {{ nv.Bo_phan_KK }}</li>
-    <li class="list-group-item"><b>Loại hàng:</b> {{ nv.Loai_hang }}</li>
-    <li class="list-group-item"><b>Nhóm:</b> {{ nv.Nhom }}</li>
-    <li class="list-group-item"><b>Đội:</b> {{ nv.Doi }}</li>
-    <li class="list-group-item"><b>Vai trò:</b> {{ nv.Vai_tro }}</li>
-    <li class="list-group-item"><b>SĐT:</b> {{ nv.SDT }}</li>
-  </ul>
+<div class="container my-4">
+
+<!-- ================================================= -->
+<!-- ================= USER VIEW ==================== -->
+<!-- ================================================= -->
+{% if role == "user" %}
+
+<div class="card mb-4">
+    <div class="card-header bg-info text-white fw-bold">
+        👤 Thông tin nhân viên
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-6"><b>Mã NV:</b> {{ nv.Ma_NV }}</div>
+            <div class="col-6"><b>Họ tên:</b> {{ nv.Ho_ten }}</div>
+            <div class="col-6"><b>BP:</b> {{ nv.BP }}</div>
+            <div class="col-6"><b>Bộ phận KK:</b> {{ nv.Bo_phan_KK }}</div>
+            <div class="col-6"><b>Loại hàng:</b> {{ nv.Loai_hang }}</div>
+            <div class="col-6"><b>Nhóm:</b> {{ nv.Nhom }}</div>
+            <div class="col-6"><b>Đội:</b> {{ nv.Doi }}</div>
+            <div class="col-6"><b>Vai trò:</b> {{ nv.Vai_tro }}</div>
+            <div class="col-12"><b>SĐT:</b> {{ nv.SDT }}</div>
+        </div>
+    </div>
 </div>
 
-<div class="card shadow-sm">
-  <div class="card-header bg-success text-white text-center">
-    📋 TRẠNG THÁI KIỂM KÊ
-  </div>
+<div class="card">
+    <div class="card-header bg-warning fw-bold">
+        📝 Trạng thái kiểm kê
+    </div>
+    <div class="card-body">
 
-  <div class="card-body">
-    <p>
-      Trạng thái hiện tại:
-      <span class="badge bg-info">{{ trang_thai }}</span>
-    </p>
+        <p>
+            <b>Trạng thái hiện tại:</b>
+            <span class="badge bg-secondary">{{ trang_thai }}</span>
+        </p>
 
-    <form method="post" action="/user/checkin">
-      <label class="form-label">Cập nhật trạng thái</label>
-      <select name="Trang_thai" class="form-select mb-3">
-        <option value="Đang KK">Đang KK</option>
-        <option value="Kết thúc KK">Kết thúc KK</option>
-      </select>
+        <form method="POST" action="/user/checkin">
+            <label class="form-label fw-bold">Cập nhật trạng thái</label>
 
-      <button class="btn btn-success w-100">
-        ✔ Cập nhật kiểm kê
-      </button>
-    </form>
-  </div>
+            <select name="trang_thai" class="form-select mb-3">
+                <option value="Đang KK">Đang KK</option>
+                <option value="Đang check chéo">Đang check chéo</option>
+                <option value="Kết thúc KK">Kết thúc KK</option>
+            </select>
+
+            <button class="btn btn-primary w-100">
+                💾 Lưu trạng thái
+            </button>
+        </form>
+
+    </div>
 </div>
+
 {% endif %}
 
+<!-- ================================================= -->
+<!-- ================= ADMIN VIEW =================== -->
+<!-- ================================================= -->
+{% if role == "admin" %}
 
-{% if role=="admin" %}
-<h4 class="mb-3 text-center">📊 DASHBOARD KIỂM KÊ</h4>
-
-<!-- ===== SUMMARY CARDS ===== -->
-<div class="row g-2 mb-3">
-  <div class="col-6">
-    <div class="card text-center shadow-sm">
-      <div class="card-body">
-        <h6>Tổng NV</h6>
-        <h3 class="text-primary">
-          {{ stat | sum(attribute='Tong') }}
-        </h3>
-      </div>
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white fw-bold">
+        📊 Dashboard kiểm kê theo bộ phận
     </div>
-  </div>
 
-  <div class="col-6">
-    <div class="card text-center shadow-sm">
-      <div class="card-body">
-        <h6>Đã KK</h6>
-        <h3 class="text-success">
-          {{ stat | sum(attribute='Ket_thuc') }}
-        </h3>
-      </div>
-    </div>
-  </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered align-middle text-center">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Bộ phận</th>
+                    <th>Tổng NV</th>
+                    <th class="text-warning">Đang KK</th>
+                    <th class="text-info">Check chéo</th>
+                    <th class="text-success">Kết thúc</th>
+                    <th>Tiến độ</th>
+                </tr>
+            </thead>
 
-  <div class="col-6">
-    <div class="card text-center shadow-sm">
-      <div class="card-body">
-        <h6>Đang KK</h6>
-        <h3 class="text-warning">
-          {{ stat | sum(attribute='Dang_KK') }}
-        </h3>
-      </div>
+            <tbody>
+            {% for r in stat %}
+                <tr>
+                    <td class="fw-bold">{{ r.Bo_phan_KK }}</td>
+                    <td>{{ r.Tong }}</td>
+                    <td>{{ r.Dang_KK }}</td>
+                    <td>{{ r.Dang_cheo }}</td>
+                    <td>{{ r.Ket_thuc }}</td>
+                    <td style="min-width:140px">
+                        <div class="progress">
+                            <div class="progress-bar bg-success"
+                                 style="width: {{ r.Tien_do }}%">
+                                {{ r.Tien_do }}%
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-  </div>
-
-  <div class="col-6">
-    <div class="card text-center shadow-sm">
-      <div class="card-body">
-        <h6>Tiến độ</h6>
-        <h3 class="text-info">
-          {{
-            (
-              stat | sum(attribute='Ket_thuc')
-              /
-              stat | sum(attribute='Tong')
-              * 100
-            ) | round(1)
-          }}%
-        </h3>
-      </div>
-    </div>
-  </div>
 </div>
 
-<!-- ===== TABLE ===== -->
-<div class="card shadow-sm">
-  <div class="card-header bg-dark text-white text-center">
-    📋 TIẾN ĐỘ THEO BỘ PHẬN
-  </div>
-
-  <div class="table-responsive">
-    <table class="table table-bordered align-middle mb-0">
-      <thead class="table-light text-center">
-        <tr>
-          <th>Bộ phận</th>
-          <th>Tổng</th>
-          <th>Đang KK</th>
-          <th>Kết thúc</th>
-          <th>Tiến độ</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in stat %}
-        <tr>
-          <td>{{ r.Bo_phan_KK }}</td>
-          <td class="text-center">{{ r.Tong }}</td>
-          <td class="text-center text-warning">{{ r.Dang_KK }}</td>
-          <td class="text-center text-success">{{ r.Ket_thuc }}</td>
-          <td>
-            <div class="progress" style="height: 18px;">
-              <div class="progress-bar bg-success"
-                   style="width: {{ r.Tien_do }}%;">
-                {{ r.Tien_do }}%
-              </div>
-            </div>
-          </td>
-          <td class="text-center">
-            <a href="/admin/export/{{ r.Bo_phan_KK }}"
-               class="btn btn-sm btn-outline-primary">
-               ⬇ Xuất
-            </a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<a href="/admin/export_all"
-   class="btn btn-danger w-100 mt-3">
-  ⬇ Xuất toàn bộ kết quả
-</a>
 {% endif %}
 
-<div class="d-flex justify-content-end mb-2">
-  <a href="/logout" class="btn btn-outline-danger btn-sm">
-    🚪 Đăng xuất
-  </a>
 </div>
 
-</div>
 </body>
 </html>
-
-
-
