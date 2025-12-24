@@ -225,14 +225,15 @@ def export_all():
     if df_all.empty:
         return "❌ File kiểm kê trống"
 
-    # Chuẩn hóa cột + thứ tự
-    df_all = df_all[[
-        "Ma_NV",
-        "Ho_ten",
-        "Bo_phan_KK",
-        "Thoi_gian",
-        "Tinh_trang"
-    ]]
+    # ===== ĐẢM BẢO CÓ ĐỦ CỘT =====
+    required_cols = ["Ma_NV", "Ho_ten", "Bo_phan_KK", "Thoi_gian", "Tinh_trang"]
+
+    for col in required_cols:
+        if col not in df_all.columns:
+            df_all[col] = ""
+
+    # Sắp xếp lại đúng thứ tự
+    df_all = df_all[required_cols]
 
     file_name = "KQ_KIEM_KE_TAT_CA_BO_PHAN.csv"
     file_path = os.path.join(BASE_DIR, file_name)
@@ -248,6 +249,7 @@ def export_all():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
 
