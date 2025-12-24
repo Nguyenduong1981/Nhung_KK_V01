@@ -11,7 +11,7 @@ CHECKIN_FILE = os.path.join(BASE_DIR, "checkin.csv")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 QR_FILE = os.path.join(STATIC_DIR, "qr_kiem_ke.png")
 
-LINK = "https://kk-final-1.onrender.com"   # đổi đúng link Render của bạn
+LINK = "https://kk-final-1.onrender.com"
 
 # ================= QR =================
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -20,11 +20,15 @@ if not os.path.exists(QR_FILE):
 
 # ================= LOAD DATA =================
 def load_data():
-    if os.path.exists(DATA_FILE):
-        df = pd.read_excel(DATA_FILE)
-        df.columns = df.columns.str.strip()
-        return df
-    return pd.DataFrame()
+    try:
+        if os.path.exists(DATA_FILE):
+            df = pd.read_excel(DATA_FILE)
+            df.columns = df.columns.str.strip()
+            return df
+        return pd.DataFrame()
+    except Exception as e:
+        print("LỖI LOAD EXCEL:", e)
+        return pd.DataFrame()
 
 df = load_data()
 
@@ -63,11 +67,7 @@ def user_home():
         if not rows.empty:
             trang_thai = rows.iloc[-1]["Trang_thai"]
 
-    return render_template(
-        "user_home.html",
-        nv=nv,
-        trang_thai=trang_thai
-    )
+    return render_template("user_home.html", nv=nv, trang_thai=trang_thai)
 
 # ================= USER CHECKIN =================
 @app.route("/user/checkin", methods=["POST"])
@@ -91,7 +91,6 @@ def user_checkin():
     if os.path.exists(CHECKIN_FILE):
         checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
 
-        # không cho ghi thêm nếu đã kết thúc
         done = checked[
             (checked["Ma_NV"].astype(str)==ma_nv) &
             (checked["Trang_thai"]=="Kết thúc KK")
@@ -136,40 +135,26 @@ def admin_dashboard():
     if "admin" not in session:
         return redirect("/admin")
 
-    if df.empty:
-        return "❌ Chưa có dữ liệu"
-
     total = df.groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Tong")
 
     if os.path.exists(CHECKIN_FILE):
         checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
-
-        # ===== FIX FILE CŨ KHÔNG CÓ CỘT Tinh_trang =====
-        if "Tinh_trang" not in checked.columns:
-            checked["Tinh_trang"] = "Kết thúc KK"
     else:
-        checked = pd.DataFrame(columns=["Bo_phan_KK", "Tinh_trang", "Ma_NV"])
+        checked = pd.DataFrame(columns=["Bo_phan_KK","Trang_thai","Ma_NV"])
 
-    dang = checked[checked["Tinh_trang"] == "Đang KK"] \
-        .groupby("Bo_phan_KK")["Ma_NV"] \
-        .count().reset_index(name="Dang_KK")
+    dang = checked[checked["Trang_thai"]=="Đang KK"] \
+        .groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Dang_KK")
 
-    ket = checked[checked["Tinh_trang"] == "Kết thúc KK"] \
-        .groupby("Bo_phan_KK")["Ma_NV"] \
-        .count().reset_index(name="Ket_thuc")
+    ket = checked[checked["Trang_thai"]=="Kết thúc KK"] \
+        .groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Ket_thuc")
 
     stat = total.merge(dang, on="Bo_phan_KK", how="left") \
                 .merge(ket, on="Bo_phan_KK", how="left") \
                 .fillna(0)
 
-    stat["Dang_KK"] = stat["Dang_KK"].astype(int)
-    stat["Ket_thuc"] = stat["Ket_thuc"].astype(int)
-    stat["Tien_do"] = (stat["Ket_thuc"] / stat["Tong"] * 100).round(1)
+    stat["Tien_do"] = (stat["Ket_thuc"]/stat["Tong"]*100).round(1)
 
-    return render_template(
-        "admin_dashboard.html",
-        stat=stat.to_dict(orient="records")
-    )
+    return render_template("admin_dashboard.html", stat=stat.to_dict("records"))
 
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
@@ -177,80 +162,36 @@ def export_bo_phan(bo_phan):
     if "admin" not in session:
         return redirect("/admin")
 
-    if not os.path.exists(CHECKIN_FILE):
-        return "❌ Chưa có dữ liệu kiểm kê"
-
-    # Đọc file checkin
     df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+    df_export = df_export[df_export["Bo_phan_KK"]==bo_phan]
 
-    # Lọc theo Bộ phận KK
-    df_export = df_export[df_export["Bo_phan_KK"] == bo_phan]
-
-    if df_export.empty:
-        return f"❌ Bộ phận {bo_phan} chưa có dữ liệu"
-
-    # Đảm bảo đủ cột + đúng thứ tự
     df_export = df_export[[
-        "Ma_NV",
-        "Ho_ten",
-        "Bo_phan_KK",
-        "Thoi_gian",
-        "Tinh_trang"
+        "Ma_NV","Ho_ten","Bo_phan_KK","Thoi_gian","Trang_thai"
     ]]
 
-    # Tên file xuất
-    file_name = f"KQ_KIEM_KE_{bo_phan}.csv"
-    file_path = os.path.join(BASE_DIR, file_name)
+    path = os.path.join(BASE_DIR, f"KQ_KIEM_KE_{bo_phan}.csv")
+    df_export.to_csv(path, index=False, encoding="utf-8-sig")
+    return send_file(path, as_attachment=True)
 
-    # Xuất CSV không lỗi font
-    df_export.to_csv(
-        file_path,
-        index=False,
-        encoding="utf-8-sig"
-    )
-
-    return send_file(file_path, as_attachment=True)
-
-# ================= EXPORT THEO all =================
+# ================= EXPORT ALL =================
 @app.route("/admin/export_all")
 def export_all():
     if "admin" not in session:
         return redirect("/admin")
 
-    if not os.path.exists(CHECKIN_FILE):
-        return "❌ Chưa có dữ liệu kiểm kê"
-
     df_all = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
 
-    if df_all.empty:
-        return "❌ File kiểm kê trống"
+    cols = ["Ma_NV","Ho_ten","Bo_phan_KK","Thoi_gian","Trang_thai"]
+    for c in cols:
+        if c not in df_all.columns:
+            df_all[c] = ""
 
-    # ===== ĐẢM BẢO CÓ ĐỦ CỘT =====
-    required_cols = ["Ma_NV", "Ho_ten", "Bo_phan_KK", "Thoi_gian", "Tinh_trang"]
+    df_all = df_all[cols]
 
-    for col in required_cols:
-        if col not in df_all.columns:
-            df_all[col] = ""
-
-    # Sắp xếp lại đúng thứ tự
-    df_all = df_all[required_cols]
-
-    file_name = "KQ_KIEM_KE_TAT_CA_BO_PHAN.csv"
-    file_path = os.path.join(BASE_DIR, file_name)
-
-    df_all.to_csv(
-        file_path,
-        index=False,
-        encoding="utf-8-sig"
-    )
-
-    return send_file(file_path, as_attachment=True)
+    path = os.path.join(BASE_DIR, "KQ_KIEM_KE_TAT_CA_BO_PHAN.csv")
+    df_all.to_csv(path, index=False, encoding="utf-8-sig")
+    return send_file(path, as_attachment=True)
 
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
-
-
-
-
-
