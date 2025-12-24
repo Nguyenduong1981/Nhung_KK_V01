@@ -36,23 +36,21 @@
   </div>
 
   <form method="post" action="/user/checkin">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <label class="form-label fw-bold">Tình trạng kiểm kê</label>
-        <select name="tinh_trang" class="form-select form-select-lg mb-3">
-          <option value="Đang KK" {{ 'selected' if tinh_trang=='Đang KK' }}>Đang KK</option>
-          <option value="Đang Check chéo" {{ 'selected' if tinh_trang=='Đang Check chéo' }}>Đang Check chéo</option>
-          <option value="Kết thúc KK" {{ 'selected' if tinh_trang=='Kết thúc KK' }}>Kết thúc KK</option>
-        </select>
+    <label class="form-label fw-bold">Trạng thái kiểm kê</label>
 
-        <button class="btn btn-success w-100 btn-lg">
-          💾 Lưu trạng thái
-        </button>
-      </div>
-    </div>
+    <select name="trang_thai" class="form-select form-select-lg mb-3" required>
+        <option value="Đang KK">🟡 Đang kiểm kê</option>
+        <option value="Đang check chéo">🔵 Đang check chéo</option>
+        <option value="Kết thúc KK">🟢 Kết thúc kiểm kê</option>
+    </select>
+
+    <button class="btn btn-success btn-lg w-100">
+        💾 Lưu trạng thái
+    </button>
   </form>
 
 </div>
 </body>
 </html>
+
 
