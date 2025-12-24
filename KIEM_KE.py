@@ -137,44 +137,30 @@ def admin_dashboard():
         return redirect("/admin")
 
     if df.empty:
-        return "❌ Chưa có dữ liệu nhân viên"
+        return "❌ Chưa có dữ liệu"
 
-    # ===== Tổng NV theo Bộ phận KK =====
-    total = (
-        df.groupby("Bo_phan_KK")["Ma_NV"]
-        .count()
-        .reset_index(name="Tong")
-    )
+    total = df.groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Tong")
 
-    # ===== Đọc file checkin =====
     if os.path.exists(CHECKIN_FILE):
         checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+
+        # ===== FIX FILE CŨ KHÔNG CÓ CỘT Tinh_trang =====
+        if "Tinh_trang" not in checked.columns:
+            checked["Tinh_trang"] = "Kết thúc KK"
     else:
-        checked = pd.DataFrame(columns=["Ma_NV", "Bo_phan_KK", "Tinh_trang"])
+        checked = pd.DataFrame(columns=["Bo_phan_KK", "Tinh_trang", "Ma_NV"])
 
-    # ===== Đang KK =====
-    dang_kk = (
-        checked[checked["Tinh_trang"] == "Đang KK"]
-        .groupby("Bo_phan_KK")["Ma_NV"]
-        .count()
-        .reset_index(name="Dang_KK")
-    )
+    dang = checked[checked["Tinh_trang"] == "Đang KK"] \
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Dang_KK")
 
-    # ===== Kết thúc KK =====
-    ket_thuc = (
-        checked[checked["Tinh_trang"] == "Kết thúc KK"]
-        .groupby("Bo_phan_KK")["Ma_NV"]
-        .count()
-        .reset_index(name="Ket_thuc")
-    )
+    ket = checked[checked["Tinh_trang"] == "Kết thúc KK"] \
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Ket_thuc")
 
-    # ===== Gộp =====
-    stat = (
-        total
-        .merge(dang_kk, on="Bo_phan_KK", how="left")
-        .merge(ket_thuc, on="Bo_phan_KK", how="left")
-        .fillna(0)
-    )
+    stat = total.merge(dang, on="Bo_phan_KK", how="left") \
+                .merge(ket, on="Bo_phan_KK", how="left") \
+                .fillna(0)
 
     stat["Dang_KK"] = stat["Dang_KK"].astype(int)
     stat["Ket_thuc"] = stat["Ket_thuc"].astype(int)
@@ -184,6 +170,7 @@ def admin_dashboard():
         "admin_dashboard.html",
         stat=stat.to_dict(orient="records")
     )
+
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
 def export_by_bo_phan(bo_phan):
@@ -207,4 +194,5 @@ def export_by_bo_phan(bo_phan):
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
