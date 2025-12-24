@@ -89,7 +89,7 @@ def user_checkin():
         return redirect("/")
 
     ma_nv = session["user"]
-    trang_thai = request.form["Trang_thai"]
+    trang_thai = request.form.get("trang_thai", "Đang KK")
 
     nv = df[df["Ma_NV"].astype(str)==ma_nv].iloc[0]
 
@@ -170,5 +170,6 @@ def logout():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
