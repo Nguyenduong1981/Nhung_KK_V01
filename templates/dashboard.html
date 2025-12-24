@@ -54,28 +54,116 @@
 {% endif %}
 
 {% if role=="admin" %}
-<h4>📊 Dashboard kiểm kê</h4>
-<table class="table table-bordered bg-white">
-<tr>
-<th>Bộ phận</th><th>Tổng</th><th>Đang</th><th>Kết thúc</th><th>%</th><th></th>
-</tr>
-{% for r in stat %}
-<tr>
-<td>{{ r.Bo_phan_KK }}</td>
-<td>{{ r.Tong }}</td>
-<td>{{ r.Dang_KK }}</td>
-<td>{{ r.Ket_thuc }}</td>
-<td>{{ r.Tien_do }}%</td>
-<td>
-<a class="btn btn-sm btn-primary" href="/admin/export/{{ r.Bo_phan_KK }}">Xuất</a>
-</td>
-</tr>
-{% endfor %}
-</table>
-<a class="btn btn-danger w-100" href="/admin/export_all">Xuất toàn bộ</a>
+<h4 class="mb-3 text-center">📊 DASHBOARD KIỂM KÊ</h4>
+
+<!-- ===== SUMMARY CARDS ===== -->
+<div class="row g-2 mb-3">
+  <div class="col-6">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6>Tổng NV</h6>
+        <h3 class="text-primary">
+          {{ stat | sum(attribute='Tong') }}
+        </h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6>Đã KK</h6>
+        <h3 class="text-success">
+          {{ stat | sum(attribute='Ket_thuc') }}
+        </h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6>Đang KK</h6>
+        <h3 class="text-warning">
+          {{ stat | sum(attribute='Dang_KK') }}
+        </h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6>Tiến độ</h6>
+        <h3 class="text-info">
+          {{
+            (
+              stat | sum(attribute='Ket_thuc')
+              /
+              stat | sum(attribute='Tong')
+              * 100
+            ) | round(1)
+          }}%
+        </h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TABLE ===== -->
+<div class="card shadow-sm">
+  <div class="card-header bg-dark text-white text-center">
+    📋 TIẾN ĐỘ THEO BỘ PHẬN
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle mb-0">
+      <thead class="table-light text-center">
+        <tr>
+          <th>Bộ phận</th>
+          <th>Tổng</th>
+          <th>Đang KK</th>
+          <th>Kết thúc</th>
+          <th>Tiến độ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in stat %}
+        <tr>
+          <td>{{ r.Bo_phan_KK }}</td>
+          <td class="text-center">{{ r.Tong }}</td>
+          <td class="text-center text-warning">{{ r.Dang_KK }}</td>
+          <td class="text-center text-success">{{ r.Ket_thuc }}</td>
+          <td>
+            <div class="progress" style="height: 18px;">
+              <div class="progress-bar bg-success"
+                   style="width: {{ r.Tien_do }}%;">
+                {{ r.Tien_do }}%
+              </div>
+            </div>
+          </td>
+          <td class="text-center">
+            <a href="/admin/export/{{ r.Bo_phan_KK }}"
+               class="btn btn-sm btn-outline-primary">
+               ⬇ Xuất
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<a href="/admin/export_all"
+   class="btn btn-danger w-100 mt-3">
+  ⬇ Xuất toàn bộ kết quả
+</a>
 {% endif %}
 
 </div>
 </body>
 </html>
+
 
