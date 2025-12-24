@@ -211,9 +211,44 @@ def export_bo_phan(bo_phan):
 
     return send_file(file_path, as_attachment=True)
 
+# ================= EXPORT THEO all =================
+@app.route("/admin/export_all")
+def export_all():
+    if "admin" not in session:
+        return redirect("/admin")
+
+    if not os.path.exists(CHECKIN_FILE):
+        return "❌ Chưa có dữ liệu kiểm kê"
+
+    df_all = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+
+    if df_all.empty:
+        return "❌ File kiểm kê trống"
+
+    # Chuẩn hóa cột + thứ tự
+    df_all = df_all[[
+        "Ma_NV",
+        "Ho_ten",
+        "Bo_phan_KK",
+        "Thoi_gian",
+        "Tinh_trang"
+    ]]
+
+    file_name = "KQ_KIEM_KE_TAT_CA_BO_PHAN.csv"
+    file_path = os.path.join(BASE_DIR, file_name)
+
+    df_all.to_csv(
+        file_path,
+        index=False,
+        encoding="utf-8-sig"
+    )
+
+    return send_file(file_path, as_attachment=True)
+
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
 
