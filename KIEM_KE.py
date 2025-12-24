@@ -116,24 +116,54 @@ def dashboard_admin():
     if "user" not in session or session["role"]!="admin":
         return redirect("/")
 
-    total = df.groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Tong")
+    # Tổng nhân viên theo bộ phận
+    total = df.groupby("Bo_phan_KK")["Ma_NV"] \
+              .count().reset_index(name="Tong")
 
-    if os.path.exists(CHECKIN_FILE):
-        checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
-    else:
-        checked = pd.DataFrame(columns=["Bo_phan_KK","Trang_thai","Ma_NV"])
+    # Nếu chưa có file checkin
+    if not os.path.exists(CHECKIN_FILE):
+        stat = total.copy()
+        stat["Dang_KK"] = 0
+        stat["Dang_cheo"] = 0
+        stat["Ket_thuc"] = 0
+        stat["Tien_do"] = 0
+        return render_template(
+            "dashboard.html",
+            role="admin",
+            stat=stat.to_dict(orient="records")
+        )
 
+    checked = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+
+    # Tránh lỗi file cũ
+    if "Trang_thai" not in checked.columns:
+        checked["Trang_thai"] = "Kết thúc KK"
+
+    # ===== THỐNG KÊ =====
     dang = checked[checked["Trang_thai"]=="Đang KK"] \
-        .groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Dang_KK")
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Dang_KK")
+
+    cheo = checked[checked["Trang_thai"]=="Đang check chéo"] \
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Dang_cheo")
 
     ket = checked[checked["Trang_thai"]=="Kết thúc KK"] \
-        .groupby("Bo_phan_KK")["Ma_NV"].count().reset_index(name="Ket_thuc")
+        .groupby("Bo_phan_KK")["Ma_NV"] \
+        .count().reset_index(name="Ket_thuc")
 
-    stat = total.merge(dang, on="Bo_phan_KK", how="left") \
-                .merge(ket, on="Bo_phan_KK", how="left") \
-                .fillna(0)
+    # Gộp
+    stat = total \
+        .merge(dang, on="Bo_phan_KK", how="left") \
+        .merge(cheo, on="Bo_phan_KK", how="left") \
+        .merge(ket, on="Bo_phan_KK", how="left") \
+        .fillna(0)
 
-    stat["Tien_do"] = (stat["Ket_thuc"]/stat["Tong"]*100).round(1)
+    stat["Dang_KK"] = stat["Dang_KK"].astype(int)
+    stat["Dang_cheo"] = stat["Dang_cheo"].astype(int)
+    stat["Ket_thuc"] = stat["Ket_thuc"].astype(int)
+
+    stat["Tien_do"] = (stat["Ket_thuc"] / stat["Tong"] * 100).round(1)
 
     return render_template(
         "dashboard.html",
@@ -170,6 +200,7 @@ def logout():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
 
