@@ -171,6 +171,11 @@ def dashboard_admin():
     # ✅ TIẾN ĐỘ CHUẨN
     stat["Tien_do"] = (stat["Ket_thuc"] / stat["Tong"] * 100).round(1)
 
+    return render_template(
+        "dashboard.html",
+        role="admin",
+        stat=stat.to_dict(orient="records")
+    )
 
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
@@ -201,6 +206,7 @@ def logout():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
 
