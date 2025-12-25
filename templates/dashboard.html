@@ -15,11 +15,15 @@ body {
 .card {
     border-radius: 14px;
 }
+.progress {
+    height: 22px;
+}
 </style>
 </head>
 
 <body>
 
+<!-- ================= NAVBAR ================= -->
 <nav class="navbar navbar-dark bg-primary px-3">
     <span class="navbar-brand fw-bold">📋 HỆ THỐNG KIỂM KÊ</span>
     <a href="/logout" class="btn btn-light btn-sm">Logout</a>
@@ -38,14 +42,14 @@ body {
     </div>
     <div class="card-body">
         <div class="row g-2">
-            <div class="col-6"><b>Mã NV:</b> {{ nv.Ma_NV }}</div>
-            <div class="col-6"><b>Họ tên:</b> {{ nv.Ho_ten }}</div>
-            <div class="col-6"><b>BP:</b> {{ nv.BP }}</div>
-            <div class="col-6"><b>Bộ phận KK:</b> {{ nv.Bo_phan_KK }}</div>
-            <div class="col-6"><b>Loại hàng:</b> {{ nv.Loai_hang }}</div>
-            <div class="col-6"><b>Nhóm:</b> {{ nv.Nhom }}</div>
-            <div class="col-6"><b>Đội:</b> {{ nv.Doi }}</div>
-            <div class="col-6"><b>Vai trò:</b> {{ nv.Vai_tro }}</div>
+            <div class="col-md-6"><b>Mã NV:</b> {{ nv.Ma_NV }}</div>
+            <div class="col-md-6"><b>Họ tên:</b> {{ nv.Ho_ten }}</div>
+            <div class="col-md-6"><b>BP:</b> {{ nv.BP }}</div>
+            <div class="col-md-6"><b>Bộ phận KK:</b> {{ nv.Bo_phan_KK }}</div>
+            <div class="col-md-6"><b>Loại hàng:</b> {{ nv.Loai_hang }}</div>
+            <div class="col-md-6"><b>Nhóm:</b> {{ nv.Nhom }}</div>
+            <div class="col-md-6"><b>Đội:</b> {{ nv.Doi }}</div>
+            <div class="col-md-6"><b>Vai trò:</b> {{ nv.Vai_tro }}</div>
             <div class="col-12"><b>SĐT:</b> {{ nv.SDT }}</div>
         </div>
     </div>
@@ -92,6 +96,14 @@ body {
     </div>
 
     <div class="card-body table-responsive">
+
+        <!-- ===== EXPORT ALL ===== -->
+        <div class="d-flex justify-content-end mb-3">
+            <a href="/admin/export_all" class="btn btn-success">
+                📊 Xuất toàn bộ Excel
+            </a>
+        </div>
+
         <table class="table table-bordered align-middle text-center">
             <thead class="table-secondary">
                 <tr>
@@ -101,6 +113,7 @@ body {
                     <th class="text-info">Check chéo</th>
                     <th class="text-success">Kết thúc</th>
                     <th>Tiến độ</th>
+                    <th>Xuất Excel</th>
                 </tr>
             </thead>
 
@@ -112,13 +125,19 @@ body {
                     <td>{{ r.Dang_KK }}</td>
                     <td>{{ r.Dang_cheo }}</td>
                     <td>{{ r.Ket_thuc }}</td>
-                    <td style="min-width:140px">
+                    <td style="min-width:160px">
                         <div class="progress">
                             <div class="progress-bar bg-success"
                                  style="width: {{ r.Tien_do }}%">
                                 {{ r.Tien_do }}%
                             </div>
                         </div>
+                    </td>
+                    <td>
+                        <a href="/admin/export/{{ r.Bo_phan_KK }}"
+                           class="btn btn-sm btn-outline-primary">
+                            📥 Excel
+                        </a>
                     </td>
                 </tr>
             {% endfor %}
@@ -133,3 +152,5 @@ body {
 
 </body>
 </html>
+
+
