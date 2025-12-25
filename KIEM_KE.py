@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, send_file
 import pandas as pd
 import os, datetime, qrcode
+from openpyxl import Workbook
 
 app = Flask(__name__)
 app.secret_key = "kiemke_secret"
@@ -180,23 +181,39 @@ def dashboard_admin():
 # ================= EXPORT THEO BỘ PHẬN =================
 @app.route("/admin/export/<bo_phan>")
 def export_bo_phan(bo_phan):
-    if session.get("role")!="admin":
+    if session.get("role") != "admin":
         return redirect("/")
 
-    df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
-    df_export = df_export[df_export["Bo_phan_KK"]==bo_phan]
+    if not os.path.exists(CHECKIN_FILE):
+        return "Chưa có dữ liệu"
 
-    file_path = f"KQ_{bo_phan}.csv"
-    df_export.to_csv(file_path, index=False, encoding="utf-8-sig")
+    df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+    df_export = df_export[df_export["Bo_phan_KK"] == bo_phan]
+
+    file_path = f"KQ_{bo_phan}.xlsx"
+
+    with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+        df_export.to_excel(writer, index=False, sheet_name="Ket_qua")
+
     return send_file(file_path, as_attachment=True)
 
 # ================= EXPORT ALL =================
 @app.route("/admin/export_all")
 def export_all():
-    if session.get("role")!="admin":
+    if session.get("role") != "admin":
         return redirect("/")
 
-    return send_file(CHECKIN_FILE, as_attachment=True)
+    if not os.path.exists(CHECKIN_FILE):
+        return "Chưa có dữ liệu"
+
+    df_export = pd.read_csv(CHECKIN_FILE, encoding="utf-8-sig")
+
+    file_path = "KQ_TONG_HOP.xlsx"
+    with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+        df_export.to_excel(writer, index=False, sheet_name="Tong_hop")
+
+    return send_file(file_path, as_attachment=True)
+
 # ================= LOGOUT =================
 @app.route("/logout")
 def logout():
@@ -206,6 +223,7 @@ def logout():
 # ================= RUN =================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+
 
 
 
